@@ -1,0 +1,42 @@
+#include <SoftwareSerial.h>
+
+// Pin configuration
+const int ldrPin = 7;         // LDR connected to digital pin 7
+const int buzzerPin = 11;     // Buzzer connected to digital pin 11
+
+SoftwareSerial SIM900A(9, 10);  // RX = 9, TX = 10
+
+bool callMade = false;        // Flag to prevent multiple calls
+
+void setup() {
+  pinMode(buzzerPin, OUTPUT);
+  pinMode(ldrPin, INPUT);       // Depends on wiring, no internal pull-up used
+  Serial.begin(9600);           // For debugging
+  SIM900A.begin(9600);          // SIM900A communication
+
+  delay(2000);                  // Allow SIM900A to initialize
+  Serial.println("System Ready");
+}
+
+void loop() {
+  int ldrValue = digitalRead(ldrPin);  // Read LDR sensor
+
+  Serial.print("LDR Value: ");
+  Serial.println(ldrValue);           // Debug info
+
+  if (ldrValue == HIGH) {  // Laser is blocked, intruder detected
+    tone(buzzerPin, 1000);   // Sound alarm
+
+    if (!callMade) {
+      Serial.println("Intruder Detected! Calling...");
+      SIM900A.println("ATD+916263456676;");  // Make the call
+      callMade = true;
+    }
+  } 
+  else {  // Laser is not blocked, no intruder
+    noTone(buzzerPin);
+    callMade = false;  // Reset flag when line of sight is restored
+  }
+
+  delay(500);  // Polling delay
+}
